@@ -140,7 +140,7 @@ char *configs_my[] = {"data/graphs/vf/xz.g,data/grammars/vf.cnf", NULL};
 #define HOT false
 // Use your custom configuration for the benchmark (default is the xz.g graph
 // and vf.cnf grammar)
-#define configs configs_vf
+#define configs configs_my
 
 int main(int argc, char **argv) {
     printf("LAGraph_CFL_AllPaths:\n");
