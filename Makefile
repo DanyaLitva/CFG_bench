@@ -18,8 +18,7 @@ run: test.c parser.c
  && ./test
 
 bench: test.c parser.c
-	gcc test.c parser.c -O2 ${ALGO} ${LIB_FLAGS} ${INCLUDE_FLAGS} \
-		-o test && ./test
+	gcc test.c parser.c -O2 -L/usr/local/lib -lgraphblas -llagraph -llagraphx -Wl,-rpath,/usr/local/lib -I/usr/local/include/suitesparse -I./ -o test && ./test
 
 bench-CI: test.c parser.c
 	gcc test.c parser.c -O2 -DCI ${ALGO} ${LIB_FLAGS} ${INCLUDE_FLAGS} \
@@ -39,3 +38,6 @@ ${LIB_FLAGS} ${INCLUDE_FLAGS} \
 
 convert: convert.c
 	gcc convert.c -o convert -Wextra -Wall -pedantic && time ./convert
+
+benchAP: testAP.c parser.c
+	gcc testAP.c parser.c -O2 -L/usr/local/lib -lgraphblas -llagraph -llagraphx -Wl,-rpath,/usr/local/lib -I/usr/local/include/suitesparse -I./ -o testAP && ./testAP

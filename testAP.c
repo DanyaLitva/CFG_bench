@@ -5,7 +5,7 @@
 #include <time.h>
 
 #define run_algorithm()                                                        \
-    LAGraph_CFL_reachability(outputs, adj_matrices, grammar.terms_count,       \
+  LAGraph_CFL_AllPaths(outputs, adj_matrices, &all_paths_t, grammar.terms_count,\
                              grammar.nonterms_count, grammar.rules,            \
                              grammar.rules_count, msg)
 
@@ -25,6 +25,7 @@
 
 GrB_Matrix *adj_matrices = NULL;
 GrB_Matrix *outputs = NULL;
+GrB_Type all_paths_t = NULL;
 grammar_t grammar = {0, 0, 0, NULL};
 char msg[LAGRAPH_MSG_LEN];
 
@@ -36,6 +37,24 @@ void init_outputs() {
     outputs = calloc(grammar.nonterms_count, sizeof(GrB_Matrix));
 }
 
+void free_AllPaths_matrix(GrB_Matrix* ptr_output){
+  GrB_Matrix output = *ptr_output;
+  GxB_Iterator iterator;
+  GxB_Iterator_new(&iterator);
+  GrB_Info info = GxB_Matrix_Iterator_attach(iterator, output, NULL);
+  info = GxB_Matrix_Iterator_seek(iterator, 0);
+  AllPathsElem val;
+  while (info != GxB_EXHAUSTED)
+  {
+    GxB_Iterator_get_UDT(iterator, (void*) &val);
+    if (val.middle) free(val.middle);
+    info = GxB_Matrix_Iterator_next(iterator);
+  }
+  
+  GrB_free(&iterator);
+  GrB_free(ptr_output);
+}
+
 void free_outputs() {
     for (size_t i = 0; i < grammar.nonterms_count; i++) {
         if (outputs == NULL)
@@ -44,7 +63,8 @@ void free_outputs() {
         if (outputs[i] == NULL)
             continue;
 
-        GrB_free(&outputs[i]);
+//        GrB_free(&outputs[i]);
+        free_AllPaths_matrix(&outputs[i]);
     }
     free(outputs);
     outputs = NULL;
@@ -65,7 +85,7 @@ void free_workspace() {
     adj_matrices = NULL;
 
     free_outputs();
-
+    GrB_free(&all_paths_t);
     free(grammar.rules);
     grammar = (grammar_t){0, 0, 0, NULL};
 }
@@ -123,7 +143,7 @@ char *configs_my[] = {"data/graphs/vf/xz.g,data/grammars/vf.cnf", NULL};
 #define configs configs_vf
 
 int main(int argc, char **argv) {
-    printf("LAGraph_CFL_reachability:\n");
+    printf("LAGraph_CFL_AllPaths:\n");
     setup();
     GrB_Info retval;
 
