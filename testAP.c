@@ -1,6 +1,7 @@
 #include <GraphBLAS.h>
 #include <LAGraph.h>
 #include <LAGraphX.h>
+#include <string.h>
 #include <parser.h>
 #include <time.h>
 
@@ -35,6 +36,28 @@ void teardown(void) { LAGraph_Finalize(msg); }
 
 void init_outputs() {
     outputs = calloc(grammar.nonterms_count, sizeof(GrB_Matrix));
+}
+
+//To test the non-reduction approach in the future
+GrB_Info get_nvals_all_paths(GrB_Index *nvals, const GrB_Matrix A){
+  GrB_Index accum = 0;
+  GxB_Iterator iterator;
+  GxB_Iterator_new(&iterator);
+  GrB_Info info = GxB_Matrix_Iterator_attach(iterator, A, NULL);
+  info = GxB_Matrix_Iterator_seek(iterator, 0);
+  AllPathsElem val;
+  
+  while (info != GxB_EXHAUSTED)
+  {
+    GxB_Iterator_get_UDT(iterator, (void*) &val);
+    accum+=val.n;
+    info = GxB_Matrix_Iterator_next(iterator);
+  }
+  
+  GrB_free(&iterator);
+  *nvals = accum;
+  
+  return GrB_SUCCESS;
 }
 
 void free_AllPaths_matrix(GrB_Matrix* ptr_output){
@@ -132,10 +155,49 @@ char *configs_vf[] = {"data/graphs/vf/xz.g,data/grammars/vf.cnf",
                       "data/graphs/vf/nab.g,data/grammars/vf.cnf",
                       "data/graphs/vf/leela.g,data/grammars/vf.cnf", NULL};
 
-char *configs_my[] = {"data/graphs/vf/xz.g,data/grammars/vf.cnf", NULL};
+char *configs_all[] = {"data/graphs/rdf/go_hierarchy.g,data/grammars/"
+                       "nested_parentheses_subClassOf_type.cnf",
+                       "data/graphs/rdf/taxonomy.g,data/grammars/"
+                       "nested_parentheses_subClassOf_type.cnf",
+                       "data/graphs/rdf/eclass.g,data/grammars/"
+                       "nested_parentheses_subClassOf_type.cnf",
+                       "data/graphs/rdf/go.g,data/grammars/"
+                       "nested_parentheses_subClassOf_type.cnf",
+                       "data/graphs/rdf/taxonomy_hierarchy.g,data/grammars/"
+                       "nested_parentheses_subClassOf_type.cnf",
+
+                       "data/graphs/java/eclipse.g,data/grammars/java_points_to.cnf",
+    "data/graphs/java/lusearch.g,data/grammars/java_points_to.cnf",
+    "data/graphs/java/luindex.g,data/grammars/java_points_to.cnf",
+    "data/graphs/java/commons_io.g,data/grammars/java_points_to.cnf",
+    "data/graphs/java/sunflow.g,data/grammars/java_points_to.cnf",
+
+"data/graphs/c_alias/init.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/block.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/fs.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/ipc.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/lib.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/mm.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/net.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/security.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/sound.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/arch.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/crypto.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/drivers.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/kernel.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/postgre.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/apache.g,data/grammars/c_alias.cnf",
+
+                       "data/graphs/vf/xz.g,data/grammars/vf.cnf",
+                      "data/graphs/vf/nab.g,data/grammars/vf.cnf",
+                      "data/graphs/vf/leela.g,data/grammars/vf.cnf", NULL};
+
+char *configs_my[] = {
+    "data/graphs/java/sunflow.g,data/grammars/java_points_to.cnf",
+    NULL};
 
 // Number of benchmark runs on a single graph
-#define COUNT 1
+#define COUNT 
 // If true, the first run is done without measuring time (warm-up)
 #define HOT false
 // Use your custom configuration for the benchmark (default is the xz.g graph
@@ -165,6 +227,8 @@ int main(int argc, char **argv) {
         }
 
         GrB_Index nnz = 0;
+        size_t count_nnz = 0;
+
         for (size_t i = 0; i < COUNT; i++) {
             init_outputs();
 
@@ -175,6 +239,7 @@ int main(int argc, char **argv) {
             end[i] = LAGraph_WallClockTime();
 
             GrB_Matrix_nvals(&nnz, outputs[0]);
+            get_nvals_all_paths(&count_nnz, outputs[0]);
             printf("\t%.3fs", end[i] - start[i]);
             fflush(stdout);
             free_outputs();
@@ -187,9 +252,9 @@ int main(int argc, char **argv) {
             sum += end[i] - start[i];
         }
 
-        printf("\tTime elapsed (avg): %.6f seconds. Result: %llu (return code "
+        printf("\tTime elapsed (avg): %.6f seconds. Result: %lu, All nnz: %lu, All/nvals = %lf (return code "
                "%d) (%s)\n\n",
-               sum / COUNT, nnz, retval, msg);
+               sum / COUNT, nnz, count_nnz, ((double)count_nnz/nnz), retval, msg);
         // GxB_print(outputs[0], 1);
         free_workspace();
         config = configs[++config_index];

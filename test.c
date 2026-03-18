@@ -1,6 +1,7 @@
 #include <GraphBLAS.h>
 #include <LAGraph.h>
 #include <LAGraphX.h>
+#include <string.h>
 #include <parser.h>
 #include <time.h>
 
@@ -112,10 +113,52 @@ char *configs_vf[] = {"data/graphs/vf/xz.g,data/grammars/vf.cnf",
                       "data/graphs/vf/nab.g,data/grammars/vf.cnf",
                       "data/graphs/vf/leela.g,data/grammars/vf.cnf", NULL};
 
-char *configs_my[] = {"data/graphs/vf/xz.g,data/grammars/vf.cnf", NULL};
+char *configs_all[] = {"data/graphs/rdf/go_hierarchy.g,data/grammars/"
+                       "nested_parentheses_subClassOf_type.cnf",
+                       "data/graphs/rdf/taxonomy.g,data/grammars/"
+                       "nested_parentheses_subClassOf_type.cnf",
+                       "data/graphs/rdf/eclass.g,data/grammars/"
+                       "nested_parentheses_subClassOf_type.cnf",
+                       "data/graphs/rdf/go.g,data/grammars/"
+                       "nested_parentheses_subClassOf_type.cnf",
+                       "data/graphs/rdf/taxonomy_hierarchy.g,data/grammars/"
+                       "nested_parentheses_subClassOf_type.cnf",
+
+                       "data/graphs/java/eclipse.g,data/grammars/java_points_to.cnf",
+    "data/graphs/java/lusearch.g,data/grammars/java_points_to.cnf",
+    "data/graphs/java/luindex.g,data/grammars/java_points_to.cnf",
+    "data/graphs/java/commons_io.g,data/grammars/java_points_to.cnf",
+    "data/graphs/java/sunflow.g,data/grammars/java_points_to.cnf",
+
+"data/graphs/c_alias/init.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/block.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/fs.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/ipc.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/lib.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/mm.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/net.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/security.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/sound.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/arch.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/crypto.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/drivers.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/kernel.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/postgre.g,data/grammars/c_alias.cnf",
+    "data/graphs/c_alias/apache.g,data/grammars/c_alias.cnf",
+
+                       "data/graphs/vf/xz.g,data/grammars/vf.cnf",
+                      "data/graphs/vf/nab.g,data/grammars/vf.cnf",
+                      "data/graphs/vf/leela.g,data/grammars/vf.cnf", NULL};
+
+char *configs_my[] = {
+    "data/graphs/vf/xz.g,data/grammars/vf.cnf",
+                      "data/graphs/vf/nab.g,data/grammars/vf.cnf",
+                      "data/graphs/vf/leela.g,data/grammars/vf.cnf",
+    NULL};
+
 
 // Number of benchmark runs on a single graph
-#define COUNT 1
+#define COUNT 2
 // If true, the first run is done without measuring time (warm-up)
 #define HOT false
 // Use your custom configuration for the benchmark (default is the xz.g graph
@@ -167,7 +210,7 @@ int main(int argc, char **argv) {
             sum += end[i] - start[i];
         }
 
-        printf("\tTime elapsed (avg): %.6f seconds. Result: %llu (return code "
+        printf("\tTime elapsed (avg): %.6f seconds. Result: %lu (return code "
                "%d) (%s)\n\n",
                sum / COUNT, nnz, retval, msg);
         // GxB_print(outputs[0], 1);

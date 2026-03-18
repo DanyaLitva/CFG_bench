@@ -7,3 +7,5 @@ test
 *.csv
 log.txt
 convert.c
+test
+testAP
