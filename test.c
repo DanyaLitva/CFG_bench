@@ -163,10 +163,6 @@ char *configs_all[] = {"data/graphs/rdf/go_hierarchy.g,data/grammars/"
                       "data/graphs/vf/nab.g,data/grammars/vf.cnf",
                       "data/graphs/vf/leela.g,data/grammars/vf.cnf", 
                       
-                                             "data/graphs/vf/xz.g,data/grammars/vf.cnf",
-                      "data/graphs/vf/nab.g,data/grammars/vf.cnf",
-                      "data/graphs/vf/leela.g,data/grammars/vf.cnf", 
-                      
                       "data/graphs/aa/cactus.g,data/grammars/aa.cnf",
                       "data/graphs/aa/imagick.g,data/grammars/aa.cnf",
                       "data/graphs/aa/leela.g,data/grammars/aa.cnf",
