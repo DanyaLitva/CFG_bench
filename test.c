@@ -4,6 +4,7 @@
 #include <string.h>
 #include <parser.h>
 #include <time.h>
+#include <stdio.h>
 
 #define run_algorithm()                                                        \
     LAGraph_CFL_reachability(outputs, adj_matrices, grammar.terms_count,       \
@@ -113,6 +114,18 @@ char *configs_vf[] = {"data/graphs/vf/xz.g,data/grammars/vf.cnf",
                       "data/graphs/vf/nab.g,data/grammars/vf.cnf",
                       "data/graphs/vf/leela.g,data/grammars/vf.cnf", NULL};
 
+char *configs_aa[] = {"data/graphs/aa/cactus.g,data/grammars/aa.cnf",
+                      "data/graphs/aa/imagick.g,data/grammars/aa.cnf",
+                      "data/graphs/aa/leela.g,data/grammars/aa.cnf",
+                      "data/graphs/aa/nab.g,data/grammars/aa.cnf",
+                      "data/graphs/aa/omnetpp.g,data/grammars/aa.cnf",
+                      "data/graphs/aa/parest.g,data/grammars/aa.cnf",
+                      "data/graphs/aa/perlbench.g,data/grammars/aa.cnf",
+                      "data/graphs/aa/povray.g,data/grammars/aa.cnf",
+                      "data/graphs/aa/x264.g,data/grammars/aa.cnf",
+                      "data/graphs/aa/xz.g,data/grammars/aa.cnf",
+                       NULL};
+
 char *configs_all[] = {"data/graphs/rdf/go_hierarchy.g,data/grammars/"
                        "nested_parentheses_subClassOf_type.cnf",
                        "data/graphs/rdf/taxonomy.g,data/grammars/"
@@ -148,27 +161,45 @@ char *configs_all[] = {"data/graphs/rdf/go_hierarchy.g,data/grammars/"
 
                        "data/graphs/vf/xz.g,data/grammars/vf.cnf",
                       "data/graphs/vf/nab.g,data/grammars/vf.cnf",
-                      "data/graphs/vf/leela.g,data/grammars/vf.cnf", NULL};
+                      "data/graphs/vf/leela.g,data/grammars/vf.cnf", 
+                      
+                                             "data/graphs/vf/xz.g,data/grammars/vf.cnf",
+                      "data/graphs/vf/nab.g,data/grammars/vf.cnf",
+                      "data/graphs/vf/leela.g,data/grammars/vf.cnf", 
+                      
+                      "data/graphs/aa/cactus.g,data/grammars/aa.cnf",
+                      "data/graphs/aa/imagick.g,data/grammars/aa.cnf",
+                      "data/graphs/aa/leela.g,data/grammars/aa.cnf",
+                      "data/graphs/aa/nab.g,data/grammars/aa.cnf",
+                      "data/graphs/aa/omnetpp.g,data/grammars/aa.cnf",
+                      "data/graphs/aa/parest.g,data/grammars/aa.cnf",
+                      "data/graphs/aa/perlbench.g,data/grammars/aa.cnf",
+                      "data/graphs/aa/povray.g,data/grammars/aa.cnf",
+                      "data/graphs/aa/x264.g,data/grammars/aa.cnf",
+                      "data/graphs/aa/xz.g,data/grammars/aa.cnf",
+                      
+                      NULL};
 
 char *configs_my[] = {
-    "data/graphs/vf/xz.g,data/grammars/vf.cnf",
-                      "data/graphs/vf/nab.g,data/grammars/vf.cnf",
-                      "data/graphs/vf/leela.g,data/grammars/vf.cnf",
+    "data/graphs/java/sunflow.g,data/grammars/java_points_to.cnf",
     NULL};
 
 
 // Number of benchmark runs on a single graph
-#define COUNT 2
+#define COUNT 1
 // If true, the first run is done without measuring time (warm-up)
 #define HOT false
 // Use your custom configuration for the benchmark (default is the xz.g graph
 // and vf.cnf grammar)
-#define configs configs_my
+#define configs configs_aa
 
 int main(int argc, char **argv) {
     printf("LAGraph_CFL_reachability:\n");
     setup();
     GrB_Info retval;
+
+    FILE *outfile = fopen("results_reachability.txt", "w+");
+    fprintf(outfile, "# graph_name avg_time nnz all_nnz ratio\n");
 
     // char *config = argv[1];
     printf("Start bench\n");
@@ -214,10 +245,27 @@ int main(int argc, char **argv) {
                "%d) (%s)\n\n",
                sum / COUNT, nnz, retval, msg);
         // GxB_print(outputs[0], 1);
+
+        char graph_name[256] = "";
+        char config_copy[1024];
+        strcpy(config_copy, config);
+        char *graph_path = strtok(config_copy, ",");
+        if (graph_path) {
+            char *last_slash = strrchr(graph_path, '/');
+            char *base = last_slash ? last_slash + 1 : graph_path;
+            char *dot = strchr(base, '.');
+            if (dot) *dot = '\0';
+            strcpy(graph_name, base);
+        }
+
+        double avg_time = sum / COUNT;
+        fprintf(outfile, "%s %.6f %lu %lu 1.0\n", graph_name, avg_time, nnz, nnz);
+
         free_workspace();
         config = configs[++config_index];
         fflush(stdout);
     }
 
+    fclose(outfile);
     teardown();
 }
