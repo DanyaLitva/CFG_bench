@@ -1,10 +1,10 @@
 // Number of benchmark runs on a single graph
-#define COUNT 1
+#define COUNT 2
 // If true, the first run is done without measuring time (warm-up)
 #define HOT false
 // Use your custom configuration for the benchmark (default is the xz.g graph
 // and vf.cnf grammar)
-#define configs configs_all
+#define configs configs_vf
 
 #include <GraphBLAS.h>
 #include <LAGraph.h>
@@ -95,8 +95,9 @@ void free_outputs() {
         if (outputs[i] == NULL)
             continue;
 
-//        GrB_free(&outputs[i]);
+       
         free_AllPaths_matrix(&outputs[i]);
+        // GrB_free(&outputs[i]);
     }
     free(outputs);
     outputs = NULL;
@@ -195,6 +196,8 @@ char *configs_all[] = {
                         "data/graphs/c_alias/sound.g,data/grammars/c_alias.cnf",
                         "data/graphs/c_alias/arch.g,data/grammars/c_alias.cnf",
                         "data/graphs/c_alias/crypto.g,data/grammars/c_alias.cnf",
+                        
+   // memory
                         // "data/graphs/c_alias/drivers.g,data/grammars/c_alias.cnf",
                         // "data/graphs/c_alias/kernel.g,data/grammars/c_alias.cnf",
                         // "data/graphs/c_alias/postgre.g,data/grammars/c_alias.cnf",
@@ -204,27 +207,34 @@ char *configs_all[] = {
                         "data/graphs/vf/nab.g,data/grammars/vf.cnf",
                         "data/graphs/vf/leela.g,data/grammars/vf.cnf", 
                         
-                        "data/graphs/aa/cactus.g,data/grammars/aa.cnf",
-                        "data/graphs/aa/imagick.g,data/grammars/aa.cnf",
-                        "data/graphs/aa/leela.g,data/grammars/aa.cnf",
-                        "data/graphs/aa/nab.g,data/grammars/aa.cnf",
-                        "data/graphs/aa/omnetpp.g,data/grammars/aa.cnf",
-                        "data/graphs/aa/parest.g,data/grammars/aa.cnf",
-                        "data/graphs/aa/perlbench.g,data/grammars/aa.cnf",
-                        "data/graphs/aa/povray.g,data/grammars/aa.cnf",
-                        "data/graphs/aa/x264.g,data/grammars/aa.cnf",
-                        "data/graphs/aa/xz.g,data/grammars/aa.cnf",
+    //                     "data/graphs/aa/cactus.g,data/grammars/aa.cnf",
+    // // time
+    //                     // "data/graphs/aa/imagick.g,data/grammars/aa.cnf",
+    //                     "data/graphs/aa/leela.g,data/grammars/aa.cnf",
+    //                     "data/graphs/aa/nab.g,data/grammars/aa.cnf",
+    // // time
+    //                     // "data/graphs/aa/omnetpp.g,data/grammars/aa.cnf",
+    // // time
+    //                     // "data/graphs/aa/parest.g,data/grammars/aa.cnf",
+    // // memory
+    //                     // "data/graphs/aa/perlbench.g,data/grammars/aa.cnf",
+    //                     "data/graphs/aa/povray.g,data/grammars/aa.cnf",
+    //                     "data/graphs/aa/x264.g,data/grammars/aa.cnf",
+    //                     "data/graphs/aa/xz.g,data/grammars/aa.cnf",
                         
                         "data/graphs/rdf/go_hierarchy.g,data/grammars/"
                         "nested_parentheses_subClassOf_type.cnf",
-                        "data/graphs/rdf/taxonomy.g,data/grammars/"
-                        "nested_parentheses_subClassOf_type.cnf",
+  //time
+                        // "data/graphs/rdf/taxonomy.g,data/grammars/"
+                        // "nested_parentheses_subClassOf_type.cnf",
+
                         "data/graphs/rdf/eclass.g,data/grammars/"
                         "nested_parentheses_subClassOf_type.cnf",
                         "data/graphs/rdf/go.g,data/grammars/"
                         "nested_parentheses_subClassOf_type.cnf",
-                        "data/graphs/rdf/taxonomy_hierarchy.g,data/grammars/"
-                        "nested_parentheses_subClassOf_type.cnf",
+  //time
+                        // "data/graphs/rdf/taxonomy_hierarchy.g,data/grammars/"
+                        // "nested_parentheses_subClassOf_type.cnf",
                         
                       NULL};
 
@@ -259,7 +269,6 @@ int main(int argc, char **argv) {
 
         GrB_Index nnz = 0;
         size_t count_nnz = 0;
-
         for (size_t i = 0; i < COUNT; i++) {
             init_outputs();
 
@@ -269,8 +278,17 @@ int main(int argc, char **argv) {
 #endif
             end[i] = LAGraph_WallClockTime();
 
-            GrB_Matrix_nvals(&nnz, outputs[0]);
-            get_nvals_all_paths(&count_nnz, outputs[0]);
+            nnz = 0;
+            count_nnz = 0;
+
+            for (size_t j = 0; j < grammar.nonterms_count; j++) {
+                GrB_Index temp = 0;
+                get_nvals_all_paths(&temp, outputs[j]);
+                count_nnz += temp;
+                GrB_Matrix_nvals(&temp, outputs[j]);
+                nnz+=temp;
+            }
+            
             printf("\t%.3fs", end[i] - start[i]);
             fflush(stdout);
             free_outputs();

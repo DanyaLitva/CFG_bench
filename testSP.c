@@ -15,7 +15,7 @@
 #include <stdio.h>
 
 #define run_algorithm()                                                        \
-    LAGraph_CFL_reachability(outputs, adj_matrices, grammar.terms_count,       \
+  LAGraph_CFL_single_path(outputs, &all_paths_t, adj_matrices, grammar.terms_count,\
                              grammar.nonterms_count, grammar.rules,            \
                              grammar.rules_count, msg)
 
@@ -35,6 +35,7 @@
 
 GrB_Matrix *adj_matrices = NULL;
 GrB_Matrix *outputs = NULL;
+GrB_Type all_paths_t = NULL;
 grammar_t grammar = {0, 0, 0, NULL};
 char msg[LAGRAPH_MSG_LEN];
 
@@ -54,6 +55,8 @@ void free_outputs() {
         if (outputs[i] == NULL)
             continue;
 
+       
+        // free_AllPaths_matrix(&outputs[i]);
         GrB_free(&outputs[i]);
     }
     free(outputs);
@@ -75,7 +78,7 @@ void free_workspace() {
     adj_matrices = NULL;
 
     free_outputs();
-
+    GrB_free(&all_paths_t);
     free(grammar.rules);
     grammar = (grammar_t){0, 0, 0, NULL};
 }
@@ -195,17 +198,16 @@ char *configs_all[] = {
                         
                       NULL};
 
-
 char *configs_my[] = {
     "data/graphs/java/sunflow.g,data/grammars/java_points_to.cnf",
     NULL};
 
 int main(int argc, char **argv) {
-    printf("LAGraph_CFL_reachability:\n");
+    printf("LAGraph_CFL_single_path:\n");
     setup();
     GrB_Info retval;
 
-    FILE *outfile = fopen("results_reachability.txt", "w+");
+    FILE *outfile = fopen("results_single_path.txt", "w+");
     fprintf(outfile, "# graph_name avg_time nnz all_nnz ratio\n");
 
     // char *config = argv[1];

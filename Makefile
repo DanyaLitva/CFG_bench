@@ -41,3 +41,6 @@ convert: convert.c
 
 benchAP: testAP.c parser.c
 	gcc testAP.c parser.c -O2 -L/usr/local/lib -lgraphblas -llagraph -llagraphx -Wl,-rpath,/usr/local/lib -I/usr/local/include/suitesparse -I./ -o testAP && ./testAP
+	
+benchSP: testSP.c parser.c
+	gcc testSP.c parser.c -O2 -L/usr/local/lib -lgraphblas -llagraph -llagraphx -Wl,-rpath,/usr/local/lib -I/usr/local/include/suitesparse -I./ -o testSP && ./testSP
