@@ -81,3 +81,11 @@ BENCH_COUNT
 BENCH_HOT
 BENCH_CONFIG
 BENCH_OUTFILE
+
+bench
+example: BENCH_ALGO=singlepath BENCH_COUNT=5 BENCH_HOT=true BENCH_CONFIG=data/configs/my.txt BENCH_OUTFILE=my_first_result.txt make bench
+default from test.c env: make bench
+
+bench_all
+example: BENCH_COUNT=5 BENCH_HOT=true BENCH_CONFIG=data/configs/my.txt make bench_all
+default from test.c env: make bench_all
