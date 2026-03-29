@@ -80,13 +80,13 @@ static bench_algo_t parse_algo(const char *s) {
 static const char *algo_name(bench_algo_t algo) {
     switch (algo) {
     case ALGO_REACHABILITY:
-        return "reachability";
+        return "Reachability";
     case ALGO_ALL_PATHS:
-        return "all paths";
+        return "All Paths";
     case ALGO_SINGLE_PATH:
-        return "single path";
+        return "Single Path";
     default:
-        return "unknown";
+        return "Unknown Algorithm";
     }
 }
 
@@ -393,7 +393,7 @@ int main(void) {
 
     fprintf(outfile, "# graph_name time nvals nnz ratio\n");
 
-    printf("Algo %s:\n", algo_name(g_algo));
+    printf("Algorithm %s:\n", algo_name(g_algo));
     printf("Start bench\n");
     fflush(stdout);
 
