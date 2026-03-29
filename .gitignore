@@ -7,3 +7,4 @@ test
 *.csv
 log.txt
 convert.c
+*.txt

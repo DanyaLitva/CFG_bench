@@ -17,7 +17,7 @@ run: $(SRC)
 	$(CC) $(SRC) $(LIB_FLAGS) $(INCLUDE_FLAGS) -o test -g $(CFLAGS_COMMON) -fsanitize=undefined -DDEBUG_parser
 
 bench: $(SRC)
-	$(CC) $(SRC) $(LDFLAGS) $(LIB_FLAGS) $(INCLUDE_FLAGS) -o test -O2
+	$(CC) $(SRC) $(LDFLAGS) $(LIB_FLAGS) $(INCLUDE_FLAGS) -o test -O2 && ./test
 
 bench-CI: $(SRC)
 	$(CC) $(SRC) $(LDFLAGS) $(LIB_FLAGS) $(INCLUDE_FLAGS) -o test -O2 -DCI
@@ -30,3 +30,9 @@ debug-info: $(SRC)
 
 convert: convert.c
 	$(CC) convert.c -o convert -Wextra -Wall -pedantic && time ./convert
+
+bench_all: $(SRC)
+	$(CC) $(SRC) $(LDFLAGS) $(LIB_FLAGS) $(INCLUDE_FLAGS) -o test -O2 && \
+	for algo in reachability singlepath allpaths; do \
+		BENCH_ALGO=$$algo ./test; \
+	done

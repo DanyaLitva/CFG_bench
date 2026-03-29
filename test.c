@@ -15,10 +15,10 @@ typedef enum {
 } bench_algo_t;
 
 //default values for env vars
-const bench_algo_t default_algo = ALGO_REACHABILITY;
-int default_count = 1;
-bool default_hot = false;
-const char* default_config = "data/configs/vf.txt";
+const bench_algo_t default_algo = ALGO_REACHABILITY; //BENCH_ALGO
+int default_count = 1; //BENCH_COUNT
+bool default_hot = false; //BENCH_HOT
+const char* default_config = "data/configs/fast.txt"; //BENCH_CONFIG
 
 typedef struct {
     char **items;
@@ -376,7 +376,7 @@ int main(void) {
     int count = env_int("BENCH_COUNT", default_count);
     bool hot = env_bool("BENCH_HOT", default_hot);
 
-    const char *config_file = getenv("BENCH_CONFIG_FILE");
+    const char *config_file = getenv("BENCH_CONFIG");
     if (config_file == NULL || *config_file == '\0') {
         config_file = default_config;
     }

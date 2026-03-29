@@ -75,9 +75,9 @@ To add a custom configuration for the benchmark, follow these steps:
 
 Now the benchmark will use your custom configuration.
 
-
+ENV: 
 BENCH_ALGO
 BENCH_COUNT
 BENCH_HOT
-BENCH_CONFIG_FILE
+BENCH_CONFIG
 BENCH_OUTFILE
