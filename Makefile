@@ -1,41 +1,32 @@
-COUNT=10
+CC = gcc
 
 LIB_FLAGS = -lgraphblas -llagraph -llagraphx
 INCLUDE_FLAGS = -I/usr/local/include/suitesparse -I./
+LDFLAGS = -L/usr/local/lib -Wl,-rpath,/usr/local/lib
+CFLAGS_COMMON = -Wextra -Wno-sign-compare -pedantic
 
-build: test.c parser.c
-	gcc test.c parser.c ${ALGO} ${LIB_FLAGS} ${INCLUDE_FLAGS} \
- -o test -O2 -Wextra -Wno-sign-compare -pedantic \
+SRC = test.c parser.c
 
-build-debug: test.c parser.c
-	gcc test.c parser.c ${ALGO} ${LIB_FLAGS} ${INCLUDE_FLAGS} \
- -o test -g -Wextra -Wno-sign-compare -pedantic -fsanitize=undefined \
- 
+build: $(SRC)
+	$(CC) $(SRC) $(LIB_FLAGS) $(INCLUDE_FLAGS) -o test -O2 $(CFLAGS_COMMON)
 
-run: test.c parser.c
-	gcc test.c parser.c ${ALGO} ${LIB_FLAGS} ${INCLUDE_FLAGS} \
- -o test -Wextra -Wno-sign-compare -pedantic -fsanitize=undefined -DDEBUG_parser \
- && ./test
+build-debug: $(SRC)
+	$(CC) $(SRC) $(LIB_FLAGS) $(INCLUDE_FLAGS) -o test -g $(CFLAGS_COMMON) -fsanitize=undefined
 
-bench: test.c parser.c
-	gcc test.c parser.c -O2 ${ALGO} ${LIB_FLAGS} ${INCLUDE_FLAGS} \
-		-o test && ./test
+run: $(SRC)
+	$(CC) $(SRC) $(LIB_FLAGS) $(INCLUDE_FLAGS) -o test -g $(CFLAGS_COMMON) -fsanitize=undefined -DDEBUG_parser
 
-bench-CI: test.c parser.c
-	gcc test.c parser.c -O2 -DCI ${ALGO} ${LIB_FLAGS} ${INCLUDE_FLAGS} \
-		-o test && ./test
+bench: $(SRC)
+	$(CC) $(SRC) $(LDFLAGS) $(LIB_FLAGS) $(INCLUDE_FLAGS) -o test -O2
 
-debug: test.c parser.c
-	gcc test.c parser.c  ${ALGO} \
-${LIB_FLAGS} ${INCLUDE_FLAGS} \
- -g -o test -Wextra -Wall -pedantic -fsanitize=address,undefined -DDEBUG \
- && ./test
+bench-CI: $(SRC)
+	$(CC) $(SRC) $(LDFLAGS) $(LIB_FLAGS) $(INCLUDE_FLAGS) -o test -O2 -DCI
 
-debug-info: test.c parser.c
-	gcc test.c parser.c  ${ALGO} \
-${LIB_FLAGS} ${INCLUDE_FLAGS} \
- -g -o test -Wno-sign-compare -pedantic -DDEBUG \
- && ./test
+debug: $(SRC)
+	$(CC) $(SRC) $(LDFLAGS) $(LIB_FLAGS) $(INCLUDE_FLAGS) -g -o test $(CFLAGS_COMMON) -fsanitize=address,undefined -DDEBUG
+
+debug-info: $(SRC)
+	$(CC) $(SRC) $(LDFLAGS) $(LIB_FLAGS) $(INCLUDE_FLAGS) -g -o test -Wno-sign-compare -pedantic -DDEBUG
 
 convert: convert.c
-	gcc convert.c -o convert -Wextra -Wall -pedantic && time ./convert
+	$(CC) convert.c -o convert -Wextra -Wall -pedantic && time ./convert

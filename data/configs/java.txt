@@ -1,0 +1,5 @@
+data/graphs/java/eclipse.g,data/grammars/java_points_to.cnf
+data/graphs/java/lusearch.g,data/grammars/java_points_to.cnf
+data/graphs/java/luindex.g,data/grammars/java_points_to.cnf
+data/graphs/java/commons_io.g,data/grammars/java_points_to.cnf
+data/graphs/java/sunflow.g,data/grammars/java_points_to.cnf

@@ -74,3 +74,10 @@ To add a custom configuration for the benchmark, follow these steps:
    After adding the new configuration, run the benchmark to ensure that it works correctly with your graph and grammar.
 
 Now the benchmark will use your custom configuration.
+
+
+BENCH_ALGO
+BENCH_COUNT
+BENCH_HOT
+BENCH_CONFIG_FILE
+BENCH_OUTFILE

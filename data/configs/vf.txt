@@ -1,0 +1,3 @@
+data/graphs/vf/xz.g,data/grammars/vf.cnf
+data/graphs/vf/nab.g,data/grammars/vf.cnf
+data/graphs/vf/leela.g,data/grammars/vf.cnf

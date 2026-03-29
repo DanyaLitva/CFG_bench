@@ -1,0 +1,3 @@
+data/graphs/vf/xz.g,data/grammars/vf.cnf
+# example:
+# data/graphs/your_graph.g,data/grammars/your_grammar.cnf

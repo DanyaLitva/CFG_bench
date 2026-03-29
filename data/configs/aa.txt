@@ -1,0 +1,10 @@
+data/graphs/aa/cactus.g,data/grammars/aa.cnf
+data/graphs/aa/imagick.g,data/grammars/aa.cnf
+data/graphs/aa/leela.g,data/grammars/aa.cnf
+data/graphs/aa/nab.g,data/grammars/aa.cnf
+data/graphs/aa/omnetpp.g,data/grammars/aa.cnf
+data/graphs/aa/parest.g,data/grammars/aa.cnf
+data/graphs/aa/perlbench.g,data/grammars/aa.cnf
+data/graphs/aa/povray.g,data/grammars/aa.cnf
+data/graphs/aa/x264.g,data/grammars/aa.cnf
+data/graphs/aa/xz.g,data/grammars/aa.cnf
