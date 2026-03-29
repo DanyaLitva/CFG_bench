@@ -14,19 +14,19 @@ build-debug: $(SRC)
 	$(CC) $(SRC) $(LIB_FLAGS) $(INCLUDE_FLAGS) -o test -g $(CFLAGS_COMMON) -fsanitize=undefined
 
 run: $(SRC)
-	$(CC) $(SRC) $(LIB_FLAGS) $(INCLUDE_FLAGS) -o test -g $(CFLAGS_COMMON) -fsanitize=undefined -DDEBUG_parser
+	$(CC) $(SRC) $(LIB_FLAGS) $(INCLUDE_FLAGS) -o test -g $(CFLAGS_COMMON) -fsanitize=undefined -DDEBUG_parser && ./test
 
 bench: $(SRC)
 	$(CC) $(SRC) $(LDFLAGS) $(LIB_FLAGS) $(INCLUDE_FLAGS) -o test -O2 && ./test
 
 bench-CI: $(SRC)
-	$(CC) $(SRC) $(LDFLAGS) $(LIB_FLAGS) $(INCLUDE_FLAGS) -o test -O2 -DCI
+	$(CC) $(SRC) $(LDFLAGS) $(LIB_FLAGS) $(INCLUDE_FLAGS) -o test -O2 -DCI && ./test
 
 debug: $(SRC)
-	$(CC) $(SRC) $(LDFLAGS) $(LIB_FLAGS) $(INCLUDE_FLAGS) -g -o test $(CFLAGS_COMMON) -fsanitize=address,undefined -DDEBUG
+	$(CC) $(SRC) $(LDFLAGS) $(LIB_FLAGS) $(INCLUDE_FLAGS) -g -o test $(CFLAGS_COMMON) -fsanitize=address,undefined -DDEBUG && ./test
 
 debug-info: $(SRC)
-	$(CC) $(SRC) $(LDFLAGS) $(LIB_FLAGS) $(INCLUDE_FLAGS) -g -o test -Wno-sign-compare -pedantic -DDEBUG
+	$(CC) $(SRC) $(LDFLAGS) $(LIB_FLAGS) $(INCLUDE_FLAGS) -g -o test -Wno-sign-compare -pedantic -DDEBUG && ./test
 
 convert: convert.c
 	$(CC) convert.c -o convert -Wextra -Wall -pedantic && time ./convert
@@ -35,4 +35,4 @@ bench_all: $(SRC)
 	$(CC) $(SRC) $(LDFLAGS) $(LIB_FLAGS) $(INCLUDE_FLAGS) -o test -O2 && \
 	for algo in reachability singlepath allpaths; do \
 		BENCH_ALGO=$$algo ./test; \
-	done
+	done \

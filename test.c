@@ -18,7 +18,7 @@ typedef enum {
 const bench_algo_t default_algo = ALGO_REACHABILITY; //BENCH_ALGO
 int default_count = 1; //BENCH_COUNT
 bool default_hot = false; //BENCH_HOT
-const char* default_config = "data/configs/fast.txt"; //BENCH_CONFIG
+const char* default_config = "data/configs/my.txt"; //BENCH_CONFIG
 
 typedef struct {
     char **items;
