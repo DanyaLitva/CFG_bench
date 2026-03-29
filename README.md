@@ -75,17 +75,17 @@ To add a custom configuration for the benchmark, follow these steps:
 
 Now the benchmark will use your custom configuration.
 
-ENV: 
-BENCH_ALGO
-BENCH_COUNT
-BENCH_HOT
-BENCH_CONFIG
-BENCH_OUTFILE
+ENV:\
+BENCH_ALGO: reachability|r, singlepath|sp ,allpaths|ap\
+BENCH_COUNT: 1,2....\
+BENCH_HOT: true|1, false|0\
+BENCH_CONFIG: example: data/configs/my.txt\
+BENCH_OUTFILE: example: my_result.txt\
 
-bench
-example: BENCH_ALGO=singlepath BENCH_COUNT=5 BENCH_HOT=true BENCH_CONFIG=data/configs/my.txt BENCH_OUTFILE=my_first_result.txt make bench
-default from test.c env: make bench
+make bench\
+example: BENCH_ALGO=singlepath BENCH_COUNT=5 BENCH_HOT=true BENCH_CONFIG=data/configs/my.txt BENCH_OUTFILE=my_first_result.txt make bench\
+default env from test.c: make bench
 
-bench_all
-example: BENCH_COUNT=5 BENCH_HOT=true BENCH_CONFIG=data/configs/my.txt make bench_all
-default from test.c env: make bench_all
+make bench_all\
+example: BENCH_COUNT=5 BENCH_HOT=true BENCH_CONFIG=data/configs/my.txt make bench_all\
+default env from test.c: make bench_all
