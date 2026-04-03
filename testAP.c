@@ -93,6 +93,7 @@ void free_outputs() {
         // GrB_free(&outputs[i]);
     }
     free(outputs);
+    GrB_free(&all_paths_t);
     outputs = NULL;
 }
 
@@ -111,7 +112,6 @@ void free_workspace() {
     adj_matrices = NULL;
 
     free_outputs();
-    GrB_free(&all_paths_t);
     free(grammar.rules);
     grammar = (grammar_t){0, 0, 0, NULL};
 }

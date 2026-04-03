@@ -8,7 +8,7 @@
 #include <stdio.h>
 
 #define run_algorithm()                                                        \
-  LAGraph_CFL_single_path(outputs, &all_paths_t, adj_matrices, grammar.terms_count,\
+  LAGraph_CFL_single_path(outputs, &single_path_t, adj_matrices, grammar.terms_count,\
                              grammar.nonterms_count, grammar.rules,            \
                              grammar.rules_count, msg)
 
@@ -28,7 +28,7 @@
 
 GrB_Matrix *adj_matrices = NULL;
 GrB_Matrix *outputs = NULL;
-GrB_Type all_paths_t = NULL;
+GrB_Type single_path_t = NULL;
 grammar_t grammar = {0, 0, 0, NULL};
 char msg[LAGRAPH_MSG_LEN];
 
@@ -53,11 +53,11 @@ void free_outputs() {
         GrB_free(&outputs[i]);
     }
     free(outputs);
+    GrB_free(&single_path_t);
     outputs = NULL;
 }
 
 void free_workspace() {
-
     for (size_t i = 0; i < grammar.terms_count; i++) {
         if (adj_matrices == NULL)
             break;
@@ -71,7 +71,6 @@ void free_workspace() {
     adj_matrices = NULL;
 
     free_outputs();
-    GrB_free(&all_paths_t);
     free(grammar.rules);
     grammar = (grammar_t){0, 0, 0, NULL};
 }
