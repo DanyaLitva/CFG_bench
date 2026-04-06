@@ -122,7 +122,7 @@ int main(int argc, char **argv) {
     GrB_Info retval;
 
     FILE *outfile = fopen("results_allpaths.txt", "w+");
-    fprintf(outfile, "# graph_name min_time nnz all_nnz ratio\n");
+    fprintf(outfile, "# graph_name avg_time nnz all_nnz ratio\n");
 
     // char *config = argv[1];
     printf("Start bench\n");
@@ -171,20 +171,22 @@ int main(int argc, char **argv) {
         }
         printf("\n");
 
-        // printf("retval = %d (%s)\n", retval, msg);
-        // double sum = 0;
-        // for (size_t i = 0; i < COUNT; i++) {
-        //     sum += end[i] - start[i];
-        // }
-        double min_time = end[0] - start[0];
+        printf("retval = %d (%s)\n", retval, msg);
+        double sum = 0;
         for (size_t i = 0; i < COUNT; i++) {
-            double temp = end[i] - start[i];
-            if(temp<min_time) min_time = temp;
+            sum += end[i] - start[i];
         }
+        // double min_time = end[0] - start[0];
+        // for (size_t i = 1; i < COUNT; i++) {
+        //     double temp = end[i] - start[i];
+        //     if(temp<min_time) min_time = temp;
+        // }
+        
+        double avg_time = sum / COUNT;
 
-        printf("\tTime elapsed (min): %.6f seconds. Result: %lu, All nnz: %lu, All/nvals = %lf (return code "
+        printf("\tTime elapsed (avg): %.6f seconds. Result: %lu, All nnz: %lu, All/nvals = %lf (return code "
                "%d) (%s)\n\n",
-               min_time, nnz, count_nnz, ((double)count_nnz/nnz), retval, msg);
+               avg_time, nnz, count_nnz, ((double)count_nnz/nnz), retval, msg);
         // GxB_print(outputs[0], 1);
 
         char graph_name[256] = "";
@@ -199,10 +201,10 @@ int main(int argc, char **argv) {
             strcpy(graph_name, base);
         }
 
-        // double avg_time = sum / COUNT;
+
         double ratio = (nnz > 0) ? (double)count_nnz / nnz : 0.0;
         fprintf(outfile, "%s %.6f %lu %lu %lf\n",
-                graph_name, min_time, nnz, count_nnz, ratio);
+                graph_name, avg_time, nnz, count_nnz, ratio);
 
         free_workspace();
         config = configs[++config_index];
