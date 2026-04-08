@@ -6,6 +6,9 @@
 #include <parser.h>
 #include <time.h>
 #include <stdio.h>
+#include <inttypes.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #define run_algorithm()                                                        \
   LAGraph_CFL_AllPaths(outputs, adj_matrices, &all_paths_t, grammar.terms_count,\
@@ -116,6 +119,65 @@ void free_workspace() {
     grammar = (grammar_t){0, 0, 0, NULL};
 }
 
+void print_n_histogram_allpaths(GrB_Matrix *outputs, size_t nonterms_count, FILE *out)
+{
+    GrB_Index max_n = 0;
+    size_t total = 0;
+    //max n
+    for (size_t k = 0; k < nonterms_count; k++) {
+        if (outputs[k] == NULL) continue;
+        GxB_Iterator it;
+        GxB_Iterator_new(&it);
+        GrB_Info info = GxB_Matrix_Iterator_attach(it, outputs[k], NULL);
+        if (info != GrB_SUCCESS) {
+            GrB_free(&it);
+            continue;
+        }
+        info = GxB_Matrix_Iterator_seek(it, 0);
+        while (info != GxB_EXHAUSTED) {
+            AllPathsElem val;
+            GxB_Iterator_get_UDT(it, (void *)&val);
+            if (val.n > max_n) {
+                max_n = val.n;
+            }
+            total++;
+            info = GxB_Matrix_Iterator_next(it);
+        }
+        GrB_free(&it);
+    }
+    size_t freq_size = (size_t)max_n + 1;
+    uint64_t *freq = calloc(freq_size, sizeof(uint64_t));
+    //freq n
+    for (size_t k = 0; k < nonterms_count; k++) {
+        if (outputs[k] == NULL) continue;
+        GxB_Iterator it;
+        GxB_Iterator_new(&it);
+        GrB_Info info = GxB_Matrix_Iterator_attach(it, outputs[k], NULL);
+        if (info != GrB_SUCCESS) {
+            GrB_free(&it);
+            continue;
+        }
+        info = GxB_Matrix_Iterator_seek(it, 0);
+        while (info != GxB_EXHAUSTED) {
+            AllPathsElem val;
+            GxB_Iterator_get_UDT(it, (void *)&val);
+            if ((size_t)val.n < freq_size) {
+                freq[(size_t)val.n]++;
+            }
+            info = GxB_Matrix_Iterator_next(it);
+        }
+        GrB_free(&it);
+    }
+    //print freq n
+    for (GrB_Index n = 0; n <= max_n; n++) {
+        if (freq[(size_t)n] > 0) {
+            fprintf(out, "%" PRIu64 " %" PRIu64 "\n",
+                    (uint64_t)n, freq[(size_t)n]);
+        }
+    }
+    free(freq);
+}
+
 int main(int argc, char **argv) {
     printf("LAGraph_CFL_AllPaths:\n");
     setup();
@@ -136,6 +198,18 @@ int main(int argc, char **argv) {
 
         double start[COUNT];
         double end[COUNT];
+
+        char graph_name[256] = "";
+        char config_copy[1024];
+        strcpy(config_copy, config);
+        char *graph_path = strtok(config_copy, ",");
+        if (graph_path) {
+            char *last_slash = strrchr(graph_path, '/');
+            char *base = last_slash ? last_slash + 1 : graph_path;
+            char *dot = strchr(base, '.');
+            if (dot) *dot = '\0';
+            strcpy(graph_name, base);
+        }
 
         if (HOT) {
             init_outputs();
@@ -165,6 +239,19 @@ int main(int argc, char **argv) {
                 nnz+=temp;
             }
             
+            if(i==0 && PRINT_HIST){
+                    char hist_name[256];
+                    snprintf(hist_name, sizeof(hist_name), "n_hist_%s.txt", graph_name);
+
+                    FILE *hist = fopen(hist_name, "w");
+                    if (hist) {
+                        fprintf(hist, "# graph: %s\n", graph_name);
+                        fprintf(hist, "# n count\n");
+                        print_n_histogram_allpaths(outputs, grammar.nonterms_count, hist);
+                        fclose(hist);
+                        }
+            }
+
             printf("\t%.3fs", end[i] - start[i]);
             fflush(stdout);
             free_outputs();
@@ -188,19 +275,6 @@ int main(int argc, char **argv) {
                "%d) (%s)\n\n",
                avg_time, nnz, count_nnz, ((double)count_nnz/nnz), retval, msg);
         // GxB_print(outputs[0], 1);
-
-        char graph_name[256] = "";
-        char config_copy[1024];
-        strcpy(config_copy, config);
-        char *graph_path = strtok(config_copy, ",");
-        if (graph_path) {
-            char *last_slash = strrchr(graph_path, '/');
-            char *base = last_slash ? last_slash + 1 : graph_path;
-            char *dot = strchr(base, '.');
-            if (dot) *dot = '\0';
-            strcpy(graph_name, base);
-        }
-
 
         double ratio = (nnz > 0) ? (double)count_nnz / nnz : 0.0;
         fprintf(outfile, "%s %.6f %lu %lu %lf\n",

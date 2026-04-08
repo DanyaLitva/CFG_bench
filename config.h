@@ -5,7 +5,9 @@
 
 #define COUNT 2
 #define HOT false
-#define configs configs_vf
+#define configs configs_my
+//ALL PATHS HISTOGRAM
+#define PRINT_HIST 0
 
 extern char *configs_rdf[];
 extern char *configs_java[];

@@ -136,7 +136,7 @@ int main(int argc, char **argv) {
 
         double avg_time = sum / COUNT;
 
-        printf("\tTime elapsed (min): %.6f seconds. Result: %lu (return code "
+        printf("\tTime elapsed (avg): %.6f seconds. Result: %lu (return code "
                "%d) (%s)\n\n",
                avg_time, nnz, retval, msg);
         // GxB_print(outputs[0], 1);
