@@ -11,7 +11,7 @@
 #include <stdio.h>
 
 #define run_algorithm()                                                        \
-  LAGraph_CFL_AllPaths(outputs, adj_matrices, &all_paths_t, grammar.terms_count,\
+  LAGraph_CFL_AllPaths(outputs,&all_paths_t, adj_matrices, grammar.terms_count,\
                              grammar.nonterms_count, grammar.rules,            \
                              grammar.rules_count, msg)
 
@@ -65,6 +65,8 @@ GrB_Info get_nvals_all_paths(GrB_Index *nvals, const GrB_Matrix A){
   return GrB_SUCCESS;
 }
 
+
+//Cleaning of internal elements before free matrix
 void free_AllPaths_matrix(GrB_Matrix* ptr_output){
   GrB_Matrix output = *ptr_output;
   GxB_Iterator iterator;
@@ -72,13 +74,16 @@ void free_AllPaths_matrix(GrB_Matrix* ptr_output){
   GrB_Info info = GxB_Matrix_Iterator_attach(iterator, output, NULL);
   info = GxB_Matrix_Iterator_seek(iterator, 0);
   AllPathsElem val;
+
   while (info != GxB_EXHAUSTED)
   {
     GxB_Iterator_get_UDT(iterator, (void*) &val);
-    if (val.middle) free(val.middle);
+    if (val.n > 1 && val.data.middle != NULL) {
+      free(val.data.middle);
+    }
     info = GxB_Matrix_Iterator_next(iterator);
   }
-  
+
   GrB_free(&iterator);
   GrB_free(ptr_output);
 }
