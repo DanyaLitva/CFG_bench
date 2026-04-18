@@ -13,7 +13,7 @@
 #define run_algorithm()                                                        \
   LAGraph_CFL_AllPaths(outputs,&all_paths_t, adj_matrices, grammar.terms_count,\
                              grammar.nonterms_count, grammar.rules,            \
-                             grammar.rules_count, msg, 1)
+                             grammar.rules_count, msg, 0)
 
 #define check_error(error)                                                     \
     {                                                                          \
@@ -184,11 +184,11 @@ void print_n_histogram_allpaths(GrB_Matrix *outputs, size_t nonterms_count, FILE
 }
 
 int main(int argc, char **argv) {
-    printf("LAGraph_CFL_AllPaths:\n");
+    printf("LAGraph_CFL_AllPathsPost:\n");
     setup();
     GrB_Info retval;
 
-    FILE *outfile = fopen("results_allpaths.txt", "w+");
+    FILE *outfile = fopen("results_allpaths_post.txt", "w+");
     fprintf(outfile, "# graph_name avg_time nnz all_nnz ratio\n");
 
     // char *config = argv[1];

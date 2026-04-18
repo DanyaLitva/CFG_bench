@@ -52,3 +52,20 @@ benchAP: testAP.c parser.c config.c
 	
 benchSP: testSP.c parser.c config.c
 	gcc testSP.c parser.c config.c -O2 -L/usr/local/lib -lgraphblas -llagraph -llagraphx -Wl,-rpath,/usr/local/lib -I/usr/local/include/suitesparse -I./ -o testSP && ./testSP
+	
+benchAPP: testAPP.c parser.c config.c
+	gcc testAPP.c parser.c config.c -O2 -L/usr/local/lib -lgraphblas -llagraph -llagraphx -Wl,-rpath,/usr/local/lib -I/usr/local/include/suitesparse -I./ -o testAPP && ./testAPP
+	
+FLAMEGRAPH = ./FlameGraph
+	
+profile-test: test
+	perf record -g -- ./test
+	perf script > test.perf
+	$(FLAMEGRAPH)/stackcollapse-perf.pl test.perf > test.folded
+	$(FLAMEGRAPH)/flamegraph.pl test.folded > test.svg
+
+profile-testAPP: testAPP
+	perf record -g -- ./testAPP
+	perf script > testAPP.perf
+	$(FLAMEGRAPH)/stackcollapse-perf.pl testAPP.perf > testAPP.folded
+	$(FLAMEGRAPH)/flamegraph.pl testAPP.folded > testAPP.svg
