@@ -7,10 +7,15 @@
 #include <GraphBLAS.h>
 #include <LAGraph.h>
 #include <LAGraphX.h>
+#include <errno.h>
 #include <getopt.h>
+#include <limits.h>
 #include <malloc.h>
+#include <signal.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #define run_algorithm()                                                                                                \
@@ -100,8 +105,48 @@ enum {
     BENCH_PARSE_OPTION = 1001,
     CFL_ALL_PATH_USE_CFPQ = 1002,
     USE_START_NODES_OPTION = 1003,
-    COMPUTE_RESULTS_OPTION = 1004
+    COMPUTE_RESULTS_OPTION = 1004,
+    TIMEOUT_OPTION = 1005
 };
+
+static bool timeout_worker = false;
+static size_t timeout_worker_config = 0;
+static int timeout_status_fd = -1;
+static AdapterRun timed_run_target;
+static unsigned int timed_run_seconds;
+static double timed_run_start;
+static double timed_run_end;
+
+static void timeout_handler(int signal_number) {
+    (void)signal_number;
+    static const char message[] = "Graph execution exceeded --timeout\n";
+    static const char marker = 'T';
+    (void)write(STDERR_FILENO, message, sizeof(message) - 1);
+    if (timeout_status_fd >= 0) {
+        (void)write(timeout_status_fd, &marker, sizeof(marker));
+    }
+    _exit(124);
+}
+
+static GrB_Info run_with_timeout(void) {
+    alarm(timed_run_seconds);
+    timed_run_start = LAGraph_WallClockTime();
+    GrB_Info result = timed_run_target();
+    timed_run_end = LAGraph_WallClockTime();
+    alarm(0);
+    return result;
+}
+
+static unsigned int parse_timeout(const char *value) {
+    char *end = NULL;
+    errno = 0;
+    unsigned long timeout = strtoul(value, &end, 10);
+    if (value[0] == '-' || errno != 0 || end == value || *end != '\0' || timeout == 0 || timeout > UINT_MAX) {
+        fprintf(stderr, "--timeout must be a positive integer number of seconds\n");
+        exit(EXIT_FAILURE);
+    }
+    return (unsigned int)timeout;
+}
 
 static void print_usage(const char *program_name) {
     fprintf(stderr,
@@ -115,6 +160,7 @@ static void print_usage(const char *program_name) {
             "  --hot             Enable HOT launch (warm-up run before measurements)\n"
             "  --bench-parse     Print grammar and graph parsing times only\n"
             "  --use-start-nodes Use start vertices from the path specified in the config\n"
+            "  --timeout <seconds> Skip a graph if an algorithm run exceeds this limit\n"
             "  -a <algorithm>    Algorithm to use (default: " DEFAULT_ALGORITHM "; options: ",
             program_name);
     registry_print_names(stderr);
@@ -143,12 +189,19 @@ static void print_usage(const char *program_name) {
 
 // runs CFL_adv with all optimizations on the same data and returns the result "algo" must have
 static GrB_Info compute_expected_result(const ParserResult *parser_result, const AlgorithmEntry *algo,
-                                        bool use_start_nodes, size_t *expected) {
+                                        bool use_start_nodes, size_t *expected, unsigned int timeout_seconds) {
     AdapterMethods reference = adapter_CFL_adv_get_methods();
     TRY(reference.prepare(parser_result,
                           &(CFL_adv_PrepareData){.optimizations = OPT_EMPTY | OPT_FORMAT | OPT_LAZY | OPT_BLOCK}));
     TRY(reference.init_outputs());
-    TRY(reference.run());
+    if (timeout_seconds != 0) {
+        alarm(timeout_seconds);
+    }
+    GrB_Info run_result = reference.run();
+    if (timeout_seconds != 0) {
+        alarm(0);
+    }
+    TRY(run_result);
 
     if (algo->is_multiple_source) {
         if (!use_start_nodes) {
@@ -183,6 +236,7 @@ int main(int argc, char **argv) {
     char *input_config = NULL;
     size_t rounds_count = 10;
     bool use_cfpq = false;
+    unsigned int timeout_seconds = 0;
 
     AdapterMethods adapter = {0};
 
@@ -192,6 +246,7 @@ int main(int argc, char **argv) {
         {"use-start-nodes", no_argument, 0, USE_START_NODES_OPTION},
         {"CFL-all-path-use-CFPQ-Core", no_argument, 0, CFL_ALL_PATH_USE_CFPQ},
         {"compute-results", no_argument, 0, COMPUTE_RESULTS_OPTION},
+        {"timeout", required_argument, 0, TIMEOUT_OPTION},
         {0, 0, 0, 0},
     };
 
@@ -223,6 +278,10 @@ int main(int argc, char **argv) {
             break;
         case COMPUTE_RESULTS_OPTION:
             compute_results = true;
+            break;
+        case TIMEOUT_OPTION:
+            timeout_seconds = parse_timeout(optarg);
+            printf("Choosen timeout: %u seconds\n", timeout_seconds);
             break;
         case 't':
             is_test = true;
@@ -270,6 +329,96 @@ int main(int argc, char **argv) {
         printf("No algorithm chosen, using " DEFAULT_ALGORITHM " by default\n");
     }
 
+    if (!is_config) {
+        fprintf(stderr, "Need to choose config by flag -c [config file]\n");
+        exit(EXIT_FAILURE);
+    }
+
+    if (timeout_seconds != 0 && !timeout_worker) {
+        result_manager_init();
+        size_t configs_count = 0;
+        char *config_text;
+        config_row *configs = get_configs_from_file(input_config, &configs_count, &config_text);
+        bool has_timeout = false;
+        int exit_status = EXIT_SUCCESS;
+
+        for (size_t i = 0; i < configs_count; i++) {
+            fflush(NULL);
+            int timeout_pipe[2];
+            if (pipe(timeout_pipe) != 0) {
+                perror("Failed to create timeout status pipe");
+                exit_status = EXIT_FAILURE;
+                break;
+            }
+
+            pid_t child = fork();
+            if (child < 0) {
+                perror("Failed to create graph worker");
+                close(timeout_pipe[0]);
+                close(timeout_pipe[1]);
+                exit_status = EXIT_FAILURE;
+                break;
+            }
+            if (child == 0) {
+                close(timeout_pipe[0]);
+                timeout_status_fd = timeout_pipe[1];
+                timeout_worker = true;
+                timeout_worker_config = i;
+                break;
+            }
+
+            close(timeout_pipe[1]);
+            int child_status = 0;
+            pid_t waited;
+            do {
+                waited = waitpid(child, &child_status, 0);
+            } while (waited < 0 && errno == EINTR);
+            if (waited < 0) {
+                perror("Failed to wait for graph worker");
+                close(timeout_pipe[0]);
+                exit_status = EXIT_FAILURE;
+                break;
+            }
+
+            char timeout_marker;
+            ssize_t marker_size;
+            do {
+                marker_size = read(timeout_pipe[0], &timeout_marker, sizeof(timeout_marker));
+            } while (marker_size < 0 && errno == EINTR);
+            close(timeout_pipe[0]);
+            if (marker_size < 0) {
+                perror("Failed to read graph worker status");
+                exit_status = EXIT_FAILURE;
+                break;
+            }
+
+            if (marker_size == 1 && timeout_marker == 'T') {
+                fprintf(stderr, "Skipping graph after timeout: %s\n", configs[i].graph);
+                has_timeout = true;
+            } else if (!WIFEXITED(child_status) || WEXITSTATUS(child_status) != EXIT_SUCCESS) {
+                fprintf(stderr, "Graph worker failed: %s\n", configs[i].graph);
+                exit_status = EXIT_FAILURE;
+                break;
+            }
+        }
+
+        free(configs);
+        free(config_text);
+        if (!timeout_worker) {
+            return has_timeout && exit_status == EXIT_SUCCESS ? EXIT_FAILURE : exit_status;
+        }
+    }
+
+    if (timeout_seconds != 0) {
+        struct sigaction timeout_action = {0};
+        timeout_action.sa_handler = timeout_handler;
+        sigemptyset(&timeout_action.sa_mask);
+        if (sigaction(SIGALRM, &timeout_action, NULL) != 0) {
+            perror("Failed to configure timeout handler");
+            exit(EXIT_FAILURE);
+        }
+    }
+
     AlgorithmOptions algo_options = {
         .optimizations = optimizations,
         .use_start_nodes = use_start_nodes,
@@ -285,11 +434,6 @@ int main(int argc, char **argv) {
 
     TRY(adapter.setup());
 
-    if (!is_config) {
-        fprintf(stderr, "Need to choose config by flag -c [config file]\n");
-        exit(EXIT_FAILURE);
-    }
-
     size_t configs_count = 0;
     char *config_text;
     config_row *configs = get_configs_from_file(input_config, &configs_count, &config_text);
@@ -298,6 +442,9 @@ int main(int argc, char **argv) {
     fflush(stdout);
 
     for (size_t i = 0; i < configs_count; i++) {
+        if (timeout_worker && i != timeout_worker_config) {
+            continue;
+        }
         config_row config = configs[i];
         printf("CONFIG: grammar: %s, graph: %s\n", config.grammar, config.graph);
         fflush(stdout);
@@ -331,7 +478,7 @@ int main(int argc, char **argv) {
 
             is_cached = computed_cache_get(kind, config.graph, config.grammar, start_nodes, &expected_result);
             if (!is_cached) {
-                TRY(compute_expected_result(&parser_result, algo, use_start_nodes, &expected_result));
+                TRY(compute_expected_result(&parser_result, algo, use_start_nodes, &expected_result, timeout_seconds));
                 computed_cache_put(kind, config.graph, config.grammar, start_nodes, expected_result);
             }
         }
@@ -340,6 +487,13 @@ int main(int argc, char **argv) {
         free_parser_result(&parser_result);
 
         bool is_hot = is_hot_enabled;
+
+#ifndef CI
+        if (timeout_seconds != 0) {
+            timed_run_target = adapter.run;
+            timed_run_seconds = timeout_seconds;
+        }
+#endif
 
         size_t result = 0;
         ssize_t max_memory_kb = 0;
@@ -353,11 +507,22 @@ int main(int argc, char **argv) {
                 exit(EXIT_FAILURE);
             }
 
-            start[j] = LAGraph_WallClockTime();
 #ifndef CI
-            retval = adapter.run();
+            if (timeout_seconds == 0) {
+                start[j] = LAGraph_WallClockTime();
+                retval = adapter.run();
+                end[j] = LAGraph_WallClockTime();
+            } else {
+                retval = run_with_timeout();
+                start[j] = timed_run_start;
+                end[j] = timed_run_end;
+            }
+#else
+            start[j] = LAGraph_WallClockTime();
 #endif
+#ifdef CI
             end[j] = LAGraph_WallClockTime();
+#endif
             max_memory_kb = mem_get_peak_kb();
 
             if (is_test) {

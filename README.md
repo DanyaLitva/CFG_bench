@@ -40,6 +40,7 @@ Benchmark options:
   --hot             Enable HOT launch (warm-up run before measurements)
   --bench-parse     Print grammar and graph parsing times only
   --use-start-nodes Use start vertices from the path specified in the config
+  --timeout <seconds> Skip a graph if an algorithm run exceeds this limit
   -a <algorithm>    Algorithm to use (default: CFL_adv; options: CFL_adv, CFL, CFL_single_path, CFL_all_path, CFL_all_path_adv, CFL_CFPQ_RSM, CFL_multsrc)
 
 Optimization flags:
@@ -72,6 +73,7 @@ Example:
 ## Usage
 
 1. Install **GraphBLAS**:
+
     ```bash
     git clone https://github.com/DrTimothyAldenDavis/GraphBLAS.git
     cd GraphBLAS
@@ -80,7 +82,9 @@ Example:
     sudo make install
     cd ..
     ```
+
 2. Install **LAGraph** from the benchmark branch:
+
     ```bash
     git clone https://github.com/SparseLinearAlgebra/LAGraph.git
     cd LAGraph
@@ -89,13 +93,16 @@ Example:
     sudo make install
     cd ..
     ```
+
 3. Start the benchmark:
+
     ```bash
     git clone https://github.com/homka122/CFG_bench.git
     cd CFG_bench
     make
     ./build/cfg_bench -c configs/configs_my.csv -efbl -a CFL_adv
     ```
+
     Run `./build/cfg_bench -h` to print the CLI help message with descriptions of all available options.
 
 ## Downloading new graphs
@@ -163,16 +170,18 @@ The benchmark reads its input set from a CSV file passed with `-c`:
 ./build/cfg_bench -c configs/configs_my.csv
 ```
 
-Use `-r` to set the number of benchmark rounds and `--hot` to enable the HOT launch warm-up run.
+Use `-r` to set the number of benchmark rounds and `--hot` to enable the HOT launch warm-up run.  
+Use `--timeout <seconds>` to limit each algorithm execution to a positive, whole
+number of seconds.  
 
 The `CFL_adv` algorithm also supports optimization flags:
 
 | Flag | Optimization | What it does |
 | ---- | ------------ | ------------ |
-| `-e` | empty  | skips operations on empty matrices |
+| `-e` | empty | skips operations on empty matrices |
 | `-f` | format | stores each matrix by rows or by columns, whichever suits the operation |
-| `-l` | lazy   | keeps a nonterminal matrix as a sum of parts and merges only parts of similar size |
-| `-b` | block  | multiplies the matrices of all indices of an indexed symbol at once |
+| `-l` | lazy | keeps a nonterminal matrix as a sum of parts and merges only parts of similar size |
+| `-b` | block | multiplies the matrices of all indices of an indexed symbol at once |
 
 These flags can be combined. For example, to enable all optimizations, run:
 
@@ -201,7 +210,7 @@ The expected result is the number of reachable pairs. `CFL_multsrc` and
 Grammar files contain one production rule per line:
 
 ```text
-<LEFT_SYMBOL>	[RIGHT_SYMBOL_1]	[RIGHT_SYMBOL_2]
+<LEFT_SYMBOL> [RIGHT_SYMBOL_1] [RIGHT_SYMBOL_2]
 ```
 
 - `<LEFT_SYMBOL>` is the nonterminal on the left-hand side of the rule.
@@ -213,9 +222,9 @@ Grammar files contain one production rule per line:
 Example:
 
 ```text
-S	AS_i	b_i
-AS_i	a_i	S
-S	c
+S AS_i b_i
+AS_i a_i S
+S c
 
 Count:
 S
@@ -226,7 +235,7 @@ S
 Graph files contain one edge per line:
 
 ```text
-<EDGE_SOURCE>	<EDGE_DESTINATION>	<EDGE_LABEL>	[LABEL_INDEX]
+<EDGE_SOURCE> <EDGE_DESTINATION> <EDGE_LABEL> [LABEL_INDEX]
 ```
 
 - `<EDGE_SOURCE>` and `<EDGE_DESTINATION>` are zero-based vertex ids.
@@ -238,10 +247,10 @@ Graph files contain one edge per line:
 Example:
 
 ```text
-1	2	a_i	1
-2	3	b_i	1
-2	4	b_i	2
-1	5	c
+1 2 a_i 1
+2 3 b_i 1
+2 4 b_i 2
+1 5 c
 ```
 
 ## Adding a New Configuration
@@ -300,7 +309,7 @@ from the config and `-t` prints a warning and `[Unknown]`.
    ```
 
    ```text
-   	Result: 156 (Return code: 0) [OK] (Computed: 156) (0.0033 sec)
+    Result: 156 (Return code: 0) [OK] (Computed: 156) (0.0033 sec)
    ```
 
    When the benchmark runs from the project root, computed values are cached

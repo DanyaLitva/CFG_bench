@@ -1,11 +1,9 @@
 #include "result_manager.h"
-#include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
 #include <sys/types.h>
 #include <time.h>
 
-bool initialized = false;
 char file_name[256];
 
 // generate csv file name based on current date and time
@@ -16,12 +14,16 @@ static void _init_file_name(void) {
             tm.tm_hour, tm.tm_min, tm.tm_sec);
 }
 
+void result_manager_init(void) {
+    if (file_name[0] == '\0') {
+        _init_file_name();
+    }
+}
+
 // Saves the result of the analysis to a csv file
 void save_result(const char *algo_name, char *cnf_str, char *graph_str, size_t result, ssize_t max_memory_kb,
                  size_t time_ms) {
-    if (!initialized) {
-        _init_file_name();
-    }
+    result_manager_init();
 
     FILE *file = fopen(file_name, "a");
 
@@ -30,9 +32,15 @@ void save_result(const char *algo_name, char *cnf_str, char *graph_str, size_t r
         exit(EXIT_FAILURE);
     }
 
-    if (!initialized) {
+    long file_size = ftell(file);
+    if (file_size < 0) {
+        fprintf(stderr, "Error checking file %s\n", file_name);
+        fclose(file);
+        exit(EXIT_FAILURE);
+    }
+
+    if (file_size == 0) {
         fprintf(file, "algo_name,cnf,graph,result,max_memory_kb,time_ms\n");
-        initialized = true;
     }
 
     fprintf(file, "\"%s\",\"%s\",\"%s\",%zu,%zd,%zu\n", algo_name, cnf_str, graph_str, result, max_memory_kb, time_ms);
